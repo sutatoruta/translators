@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2023-12-25 16:00:33"
+	"lastUpdated": "2023-12-25 18:51:15"
 }
 
 function scrape(doc, url) {
@@ -20,7 +20,7 @@ function scrape(doc, url) {
 		item.creators.push(ZU.cleanAuthor(creator, 'presenter'));
 	}
 	item.abstractNote = text(doc, '.deck-description');
-	item.date = text(doc,".deck-date");
+	item.date = text(doc, ".deck-date");
 	item.url = url.split('?')[0]; //remove query parameters
 	item.libraryCatalog = "Speaker Deck";
 	const pdfurl = attr(doc, 'a[title="Download PDF"]', "href");
@@ -31,15 +31,36 @@ function scrape(doc, url) {
 	item.complete();
 }
 
+function getSearchResults(doc, checkOnly) {
+	const items = {};
+	for (const row of doc.querySelectorAll('a.deck-preview-link[href][title]')) {
+		const href = row.attributes["href"].value;
+		const title = row.attributes["title"].value;
+		if (!href || !title) continue;
+		if (checkOnly) return true;
+		items[href] = title;
+	}
+	return Object.keys(items).length !== 0 ? items : false;
+}
+
 function detectWeb(doc, url) {
 	if (doc.querySelector(".deck-embed")) {
 		return "presentation";
+	} else if (getSearchResults(doc, true)) {
+		return "multiple";
 	}
 }
 
 function doWeb(doc, url) {
-	if (detectWeb(doc, url) == "presentation") {
-		scrape(doc, url);
+	switch (detectWeb(doc, url)) {
+		case 'presentation':
+			scrape(doc, url);
+			break;
+		case 'multiple':
+			Z.selectItems(getSearchResults(doc, false), function (items) {
+				if (items) ZU.processDocuments(Object.keys(items), scrape);
+			});
+			break;
 	}
 }
 /** BEGIN TEST CASES **/
@@ -73,6 +94,11 @@ var testCases = [
 				"seeAlso": []
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "https://speakerdeck.com/",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

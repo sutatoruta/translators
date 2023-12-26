@@ -1,7 +1,7 @@
 {
 	"translatorID": "fad64eb9-1b22-48a1-953f-a4d464194903",
 	"label": "Speaker Deck",
-	"creator": "",
+	"creator": "sutatoruta",
 	"target": "^https?://[^/]*speakerdeck\\.com/",
 	"minVersion": "3.0",
 	"maxVersion": "",
@@ -9,8 +9,31 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2023-12-25 18:51:15"
+	"lastUpdated": "2023-12-26 17:33:53"
 }
+
+/*
+	***** BEGIN LICENSE BLOCK *****
+
+	Copyright © 2023 sutatoruta
+
+	This file is part of Zotero.
+
+	Zotero is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Zotero is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Zotero. If not, see <http://www.gnu.org/licenses/>.
+
+	***** END LICENSE BLOCK *****
+*/
 
 function scrape(doc, url) {
 	const item = new Zotero.Item("presentation");
@@ -25,7 +48,7 @@ function scrape(doc, url) {
 	item.libraryCatalog = "Speaker Deck";
 	const pdfurl = attr(doc, 'a[title="Download PDF"]', "href");
 	if (pdfurl) {
-		item.attachments.push({url:pdfurl, title:"Slide PDF", mimeType:"application/pdf"});
+		item.attachments.push({ url: pdfurl, title: "Slide PDF", mimeType: "application/pdf" });
 	}
 
 	item.complete();
@@ -34,8 +57,8 @@ function scrape(doc, url) {
 function getSearchResults(doc, checkOnly) {
 	const items = {};
 	for (const row of doc.querySelectorAll('a.deck-preview-link[href][title]')) {
-		const href = row.attributes["href"].value;
-		const title = row.attributes["title"].value;
+		const href = row.attributes.href.value;
+		const title = row.attributes.title.value;
 		if (!href || !title) continue;
 		if (checkOnly) return true;
 		items[href] = title;
@@ -43,16 +66,20 @@ function getSearchResults(doc, checkOnly) {
 	return Object.keys(items).length !== 0 ? items : false;
 }
 
-function detectWeb(doc, url) {
+function detectWeb(doc) {
 	if (doc.querySelector(".deck-embed")) {
 		return "presentation";
-	} else if (getSearchResults(doc, true)) {
+	}
+	else if (getSearchResults(doc, true)) {
 		return "multiple";
+	}
+	else {
+		return false;
 	}
 }
 
 function doWeb(doc, url) {
-	switch (detectWeb(doc, url)) {
+	switch (detectWeb(doc)) {
 		case 'presentation':
 			scrape(doc, url);
 			break;
@@ -63,6 +90,7 @@ function doWeb(doc, url) {
 			break;
 	}
 }
+
 /** BEGIN TEST CASES **/
 var testCases = [
 	{
